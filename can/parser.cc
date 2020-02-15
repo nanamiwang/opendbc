@@ -237,3 +237,39 @@ std::vector<SignalValue> CANParser::query_latest() {
 
   return ret;
 }
+
+extern "C" {
+
+void* can_init(int bus, const char* dbc_name,
+               size_t num_message_options, const MessageParseOptions* message_options,
+               size_t num_signal_options, const SignalParseOptions* signal_options) {
+  CANParser* ret = new CANParser(bus, std::string(dbc_name),
+                                 (message_options ? std::vector<MessageParseOptions>(message_options, message_options+num_message_options)
+                                  : std::vector<MessageParseOptions>{}),
+                                 (signal_options ? std::vector<SignalParseOptions>(signal_options, signal_options+num_signal_options)
+                                  : std::vector<SignalParseOptions>{}));
+  return (void*)ret;
+}
+
+void can_update_string(void *can, const char* dat, int len, bool sendcan) {
+  CANParser* cp = (CANParser*)can;
+  cp->update_string(std::string(dat, len), sendcan);
+}
+
+size_t can_query(void* can, bool *out_can_valid, size_t out_values_size, SignalValue* out_values) {
+  CANParser* cp = (CANParser*)can;
+
+  if (out_can_valid) {
+    *out_can_valid = cp->can_valid;
+  }
+
+  const std::vector<SignalValue> values = cp->query_latest();
+  if (out_values) {
+    std::copy(values.begin(), values.begin()+std::min(out_values_size, values.size()), out_values);
+  }
+  return values.size();
+};
+
+
+}
+

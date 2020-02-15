@@ -106,3 +106,18 @@ uint64_t CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &s
 
   return ret;
 }
+
+extern "C" {
+  void* canpack_init(const char* dbc_name) {
+    CANPacker *ret = new CANPacker(std::string(dbc_name));
+    return (void*)ret;
+  }
+
+  uint64_t canpack_pack(void* inst, uint32_t address, size_t num_vals, const SignalPackValue *vals, int counter, bool checksum) {
+    CANPacker *cp = (CANPacker*)inst;
+
+    return cp->pack(address, std::vector<SignalPackValue>(vals, vals+num_vals), counter);
+  }
+
+}
+
